@@ -1,0 +1,7 @@
+{
+    "positiveThreshold": 0.5,
+    "negativeThreshold": -0.5,
+    "timeoutDuration": 10,
+    "maxQueueSize": 5 
+}
+
