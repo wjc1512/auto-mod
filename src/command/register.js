@@ -1,4 +1,4 @@
-const BaseCommand = require('../util/BaseCommand')
+const BaseCommand = require('../util/base_command')
 const fs = require('node:fs')
 const path = require('node:path');
 

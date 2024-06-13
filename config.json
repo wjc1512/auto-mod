@@ -2,6 +2,8 @@
     "positiveThreshold": 0.5,
     "negativeThreshold": -0.5,
     "timeoutDuration": 10,
-    "maxQueueSize": 5 
+    "maxQueueSize": 5,
+    "ascii_ubound": 127,
+    "ascii_lbound": 0
 }
 
