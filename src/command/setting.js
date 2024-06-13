@@ -1,4 +1,4 @@
-const BaseCommand = require('../util/BaseCommand')
+const BaseCommand = require('../util/base_command')
 
 class Setting extends BaseCommand {
     constructor() {

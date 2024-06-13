@@ -1,4 +1,4 @@
-const SubCommand = require('../util/SubCommand')
+const SubCommand = require('../util/sub_command')
 
 class AuthorizeRole extends SubCommand {
     constructor(){
