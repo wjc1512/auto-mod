@@ -1,4 +1,5 @@
 const CustomMap = require('./util/map.js')
+const Conversation = require('./conversation')
 
 class GuildMap extends CustomMap {
     constructor(){

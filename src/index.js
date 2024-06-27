@@ -8,7 +8,7 @@ const guildMap = GuildMap.getInstance()
 
 client.on('ready', async () => {
     connection = await require('./database/db')
-    await connection.query(`SELECT * FROM GUILD;`).then(([guildRec]) => {
+    await connection.query(`SELECT * FROM guild;`).then(([guildRec]) => {
         //initialize guild map
         guildRec.forEach((guild) => {
             guildMap.addGuild(guild.guild_id)
@@ -34,7 +34,7 @@ client.on('ready', async () => {
 client.on('guildMemberAdd', async (member) => {
     if (member.user.bot) return;
     await connection.query(
-        `INSERT INTO USER (user_id, user_name, guild_id) 
+        `INSERT INTO user (user_id, user_name, guild_id) 
         VALUES ('${member.user.id}', '${member.user.username}', '${member.guild.id}');`
     )
 })
@@ -42,24 +42,24 @@ client.on('guildMemberAdd', async (member) => {
 client.on('guildMemberRemove', async (member) => {
     if (member.user.bot) return;
     await connection.query(
-        `DELETE FROM USER 
+        `DELETE FROM user 
         WHERE guild_id = '${member.guild.id}'
-        AND member_id = '${member.user.id}';`
+        AND user_id = '${member.user.id}';`
     )
 })
 
 client.on('guildCreate', async (guild) => {
     try{
         await connection.query(
-            `INSERT INTO GUILD (guild_id, guild_name, join_date)
-            VALUES ('${guild.id}', '${guild.name}', '${new Date()}');`
+            `INSERT INTO guild (guild_id, guild_name, join_date)
+            VALUES ('${guild.id}', '${guild.name}', "${new Date().toISOString().slice(0, 19).replace('T', ' ')}");`
         )
 
         await guild.members.fetch();
 
         guild.members.cache.filter(m => !m.user.bot).forEach(async (m) => {
             await connection.query(
-                `INSERT INTO USER (guild_id, user_id, user_name)
+                `INSERT INTO user (guild_id, user_id, user_name)
                 VALUES('${m.guild.id}', '${m.user.id}', '${m.user.username}');`
             )
         })
@@ -79,11 +79,11 @@ client.on('guildCreate', async (guild) => {
 client.on('guildDelete', async (guild) => {
     try{
         await connection.query(
-            `DELETE FROM USER
+            `DELETE FROM user
             WHERE guild_id = ${guild.id};`
         )
         await connection.query(
-            `DELETE FROM GUILD
+            `DELETE FROM guild
             WHERE guild_id = ${guild.id};`
         )
     } catch (err) {
@@ -100,10 +100,19 @@ client.on('channelRemove', (channel) => {
     guildMap.getValue(channel.guild.id).removeChannel(channel.id)
 })
 
-client.on('messageCreate', (msg) => {
-    if (msg.author.bot) return;
-    
+client.on('messageCreate', async (msg) => {
+    if (await checkForModeration(msg)) return;
     guildMap.getValue(msg.guildId).getValue(msg.channelId).addMsg(msg.author.id, msg.id, msg.content)
+})
+
+client.on('messageUpdate', async (msg) => {
+    if (await checkForModeration(msg)) return;
+    guildMap.getValue(msg.guildId).getValue(msg.channelId).editMsg(msg.id, msg.content)
+})
+
+client.on('messageDelete', async (msg) => {
+    if (await checkForModeration(msg)) return;
+    guildMap.getValue(msg.guildId).getValue(msg.channelId).deleteMsg(msg.id)
 })
 
 client.on(Events.InteractionCreate, async interaction => {
@@ -124,5 +133,12 @@ client.on(Events.InteractionCreate, async interaction => {
         }
     }
 })
+
+async function checkForModeration(msg){
+    const [authorized_roles] = await connection.query(`SELECT * FROM guild_authorized_role WHERE guild_id = '${msg.guild.id}'`)
+    const msg_author_roles_id = msg.guild.members.cache.get(msg.author.id).roles.cache.map(role => role.id)
+    const [ignored_channels] = await connection.query(`SELECT * FROM guild_ignored_channel WHERE guild_id = '${msg.guild.id}'`)
+    return msg.author.bot || authorized_roles.some(role => msg_author_roles_id.includes(role.role_id)) || ignored_channels.some(channel => channel.channel_id == msg.channelid)
+}
 
 client.login(process.env.TOKEN);

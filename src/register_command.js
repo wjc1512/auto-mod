@@ -15,9 +15,6 @@ module.exports = (guildId) => {
 		const command = require(filePath)
 		const base_command_instance = new command()
 		client.base_command.set(base_command_instance.name, base_command_instance)
-		if (base_command_instance.have_subcommand){
-			client.sub_command.set(base_command_instance.name, new Collection())
-		}
 	};
 
 	const sub_command_path = path.join(__dirname, 'subcommand');
@@ -26,23 +23,22 @@ module.exports = (guildId) => {
 		const filePath = path.join(sub_command_path, file);
 		const sub_command = require(filePath);
 		const sub_command_instance = new sub_command();
-		client.sub_command.get(sub_command_instance.base_command)
-			.set(sub_command_instance.name, sub_command_instance);
+		if (client.sub_command.get(sub_command_instance.base_command) == null){
+			client.sub_command.set(sub_command_instance.base_command, new Collection())
+		}
+		client.sub_command.get(sub_command_instance.base_command).set(sub_command_instance.name, sub_command_instance)
 	};
 	
 	const commands_json = client.base_command.map(base_cmd => {
 		const base_cmd_data = base_cmd.getData()
-		if (base_cmd.have_subcommand) {
-			client.sub_command.get(base_cmd.name).forEach(sub_cmd => {
-				sub_cmd.addBaseCmd(base_cmd_data)
-			})
-		}
+		client.sub_command.get(base_cmd.name)?.forEach(sub_cmd => {
+			sub_cmd.addBaseCmd(base_cmd_data)
+		})
 		return base_cmd_data.toJSON()
 	});
 
 	const rest = new REST().setToken(process.env.TOKEN);
 
-	//IIFE
 	(async () => {
 		try {
 			console.log(`Begin registering commands for guild ${guildId}`);

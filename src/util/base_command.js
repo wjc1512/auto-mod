@@ -1,10 +1,9 @@
 const { SlashCommandBuilder } = require('discord.js')
 
 class BaseCommand {
-    constructor(name, description, have_subcommand=false){
+    constructor(name, description){
         this.name = name
         this.description = description
-        this.have_subcommand = have_subcommand
     }
 
     async execute(interaction){

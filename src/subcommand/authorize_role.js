@@ -2,7 +2,7 @@ const SubCommand = require('../util/sub_command')
 
 class AuthorizeRole extends SubCommand {
     constructor(){
-        super('setting', 'authorized_role', 'Specify the roles that have/not-have access to the bot')
+        super('setting', 'authorized_role', 'Specify the roles that have access to the bot')
     }
 
     async execute(interaction){
@@ -14,7 +14,7 @@ class AuthorizeRole extends SubCommand {
             case 'add':
                 try {
                     await connection.query(`
-                    INSERT INTO GUILD_AUTHORIZED_ROLE (guild_id, role_id, role_name) 
+                    INSERT INTO guild_authorized_role (guild_id, role_id, role_name) 
                     VALUES('${interaction.guild.id}', '${authorizedRole.id}', '${authorizedRole.name}')`)
 
                     await interaction.followUp({content: `${authorizedRole} is successfully authorized!`, ephemeral:true})
@@ -30,7 +30,7 @@ class AuthorizeRole extends SubCommand {
             case 'remove':
                 try {
                     await connection.query(`
-                    DELETE FROM GUILD_AUTHORIZED_ROLE
+                    DELETE FROM guild_authorized_role
                     WHERE role_id = ${authorizedRole.id}`)
 
                     await interaction.followUp({content: `${authorizedRole} is successfully unauthorized!`, ephemeral:true})
