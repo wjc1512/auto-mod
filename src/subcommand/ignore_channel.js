@@ -2,7 +2,7 @@ const SubCommand = require('../util/sub_command')
 
 class IgnoreChannel extends SubCommand {
     constructor(){
-        super('setting', 'ignore_channel', 'Specify the channels that the bot should/should-not access to')
+        super('setting', 'ignore_channel', 'Specify the channels that the bot have access to')
     }
 
     async execute(interaction){
@@ -14,7 +14,7 @@ class IgnoreChannel extends SubCommand {
             case 'add':
                 try {
                     await connection.query(`
-                    INSERT INTO GUILD_IGNORED_CHANNEL (guild_id, channel_id, channel_name) 
+                    INSERT INTO guild_ignored_channel (guild_id, channel_id, channel_name) 
                     VALUES('${interaction.guild.id}', '${ignoredChannel.id}', '${ignoredChannel.name}')`)
 
                     await interaction.followUp({content: `${ignoredChannel} is successfully ignored!`, ephemeral:true})
@@ -30,7 +30,7 @@ class IgnoreChannel extends SubCommand {
             case 'remove':
                 try {
                     await connection.query(`
-                    DELETE FROM GUILD_IGNORED_CHANNEL
+                    DELETE FROM guild_ignored_channel
                     WHERE channel_id = ${ignoredChannel.id}`)
 
                     await interaction.followUp({content: `${ignoredChannel} is successfully un-ignored!`, ephemeral:true})

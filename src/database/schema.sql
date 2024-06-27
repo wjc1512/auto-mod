@@ -1,40 +1,54 @@
+DROP DATABASE IF EXISTS auto_mod;
 CREATE DATABASE auto_mod;
 USE auto_mod;
 
-CREATE TABLE GUILD (
-    guild_id VARCHAR(100) NOT NULL,
-    guild_name VARCHAR(200) NOT NULL,
-    join_date DATE NOT NULL
+DROP TABLE IF EXISTS guild;
+DROP TABLE IF EXISTS user;
+DROP TABLE IF EXISTS guild_authorized_role;
+DROP TABLE IF EXISTS guild_ignored_channel;
+DROP TABLE IF EXISTS guild_restricted_keyword;
+
+CREATE TABLE guild (
+    guild_id VARCHAR(100),
+    guild_name VARCHAR(200),
+    join_date DATE
 );
 
-ALTER TABLE GUILD ADD CONSTRAINT guild_pk PRIMARY KEY ( guild_id );
+ALTER TABLE guild ADD CONSTRAINT guild_pk PRIMARY KEY ( guild_id );
 
-CREATE TABLE USER (
-    guild_id VARCHAR(100) NOT NULL,
-    user_id VARCHAR(100) NOT NULL,
+CREATE TABLE user (
+    guild_id VARCHAR(100),
+    user_id VARCHAR(100),
     user_name VARCHAR(200),
-    avg_st_score DOUBLE DEFAULT 0,
-    timeout_count INTEGER(3) DEFAULT 0,
-    report_count INTEGER(3) DEFAULT 0
+    st_score DOUBLE DEFAULT 0,
+    offence_count INTEGER(3) DEFAULT 0
 );
 
-ALTER TABLE USER ADD CONSTRAINT user_pk PRIMARY KEY ( user_id, guild_id );
-ALTER TABLE USER ADD CONSTRAINT user_guild_fk FOREIGN KEY ( guild_id ) REFERENCES GUILD ( guild_id );
+ALTER TABLE user ADD CONSTRAINT user_pk PRIMARY KEY ( user_id, guild_id );
+ALTER TABLE user ADD CONSTRAINT user_guild_fk FOREIGN KEY ( guild_id ) REFERENCES guild ( guild_id );
 
-CREATE TABLE GUILD_AUTHORIZED_ROLE (
-    guild_id VARCHAR(100) NOT NULL,
-    role_id VARCHAR(100) NOT NULL,
+CREATE TABLE guild_authorized_role (
+    guild_id VARCHAR(100),
+    role_id VARCHAR(100),
     role_name VARCHAR(100)  
 );
 
-ALTER TABLE GUILD_AUTHORIZED_ROLE ADD CONSTRAINT guild_authorized_role_pk PRIMARY KEY ( guild_id, role_id );
-ALTER TABLE GUILD_AUTHORIZED_ROLE ADD CONSTRAINT guild_authorized_roke_fk FOREIGN KEY ( guild_id ) REFERENCES GUILD ( guild_id );
+ALTER TABLE guild_authorized_role ADD CONSTRAINT guild_authorized_role_pk PRIMARY KEY ( guild_id, role_id );
+ALTER TABLE guild_authorized_role ADD CONSTRAINT guild_authorized_role_fk FOREIGN KEY ( guild_id ) REFERENCES guild ( guild_id );
 
-CREATE TABLE GUILD_IGNORED_CHANNEL (
-    guild_id VARCHAR(100) NOT NULL,
-    channel_id VARCHAR(100) NOT NULL,
+CREATE TABLE guild_ignored_channel (
+    guild_id VARCHAR(100),
+    channel_id VARCHAR(100),
     channel_name VARCHAR(100)
 );
 
-ALTER TABLE GUILD_IGNORED_CHANNEL ADD CONSTRAINT guild_ignored_channel_pk PRIMARY KEY ( guild_id, channel_id );
-ALTER TABLE GUILD_IGNORED_CHANNEL ADD CONSTRAINT guild_ignored_channel_fk FOREIGN KEY ( guild_id ) REFERENCES GUILD ( guild_id );
+ALTER TABLE guild_ignored_channel ADD CONSTRAINT guild_ignored_channel_pk PRIMARY KEY ( guild_id, channel_id );
+ALTER TABLE guild_ignored_channel ADD CONSTRAINT guild_ignored_channel_fk FOREIGN KEY ( guild_id ) REFERENCES guild ( guild_id );
+
+CREATE TABLE guild_restricted_keyword (
+    guild_id VARCHAR(100),
+    keyword VARCHAR(255)
+);
+
+ALTER TABLE guild_restricted_keyword ADD CONSTRAINT guild_restricted_keyword_pk PRIMARY KEY ( guild_id, keyword );
+ALTER TABLE guild_restricted_keyword ADD CONSTRAINT guild_restricted_keyword_fk FOREIGN KEY ( guild_id ) REFERENCES guild ( guild_id );
