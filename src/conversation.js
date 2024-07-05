@@ -2,6 +2,7 @@ const cfg = require('../config.json')
 const Queue = require('./util/queue')
 const LinkedList = require('./util/linked_list')
 const queue = Queue.getInstance()
+const update_user_sentiment = require('./moderation')
 
 module.exports = class Conversation {
     constructor(guildId, channelId){
@@ -31,7 +32,7 @@ module.exports = class Conversation {
     }
 
     resetTimeout(){
-        clearTimeout(this.timeout)
+        if (this.timeout != null) clearTimeout(this.timeout)
         this.timeout = setTimeout(async () => await this.pushToQueue(), cfg.timeoutDuration)
     }
 
@@ -39,15 +40,21 @@ module.exports = class Conversation {
         this.data = new LinkedList()
         this.timeout = null
     }
+
+    clone(){
+        const new_instance = new Conversation(this.gid, this.cid)
+        new_instance.data = this.data
+        return new_instance
+    }
     
     async pushToQueue(){
         if (queue.isFull()){
             const deqAll = () => {
-                const node = queue.dequeue()
-                return [node].concat(deqAll())}
-            await Promise.all(deqAll().map(moderateUser))
+                return queue.isEmpty() ? [] : [queue.dequeue()].concat(deqAll())
+            }
+            await Promise.all(deqAll().map(update_user_sentiment))
         }
-        queue.enqueue(this)
+        queue.enqueue(this.clone())
         this.initData()
     }
 }
