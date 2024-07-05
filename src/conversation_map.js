@@ -29,7 +29,7 @@ class ChannelMap extends CustomMap{
     }
 
     addChannel(channelID) {
-        this.setValue(channelID, new Conversation())
+        this.setValue(channelID, new Conversation(this.gid, channelID))
     }
 
     removeChannel(channelID){

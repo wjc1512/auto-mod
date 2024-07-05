@@ -51,6 +51,15 @@ module.exports = class LinkedList {
         const node = this.search(u_id)
         node.data = data
     }
+
+    *[Symbol.iterator]() {
+        if (!this.head) return;
+        let current = this.head
+        while(current != null) {
+            yield current
+            current = current.next
+        }
+    }
 }
 
 class Node {

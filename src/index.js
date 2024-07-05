@@ -103,6 +103,7 @@ client.on('channelRemove', (channel) => {
 client.on('messageCreate', async (msg) => {
     if (await checkForModeration(msg)) return;
     guildMap.getValue(msg.guildId).getValue(msg.channelId).addMsg(msg.author.id, msg.id, msg.content)
+    
 })
 
 client.on('messageUpdate', async (msg) => {
