@@ -1,7 +1,8 @@
 require('dotenv').config()
-const { Events } = require('discord.js')
+const { Events, EmbedBuilder } = require('discord.js')
 const GuildMap = require('./conversation_map.js')
 const client = require('./client.js')
+const { mod } = require('./moderation')
 
 let connection
 const guildMap = GuildMap.getInstance()
@@ -102,8 +103,9 @@ client.on('channelRemove', (channel) => {
 
 client.on('messageCreate', async (msg) => {
     if (await checkForModeration(msg)) return;
+    const mod_result = await mod(msg.id, msg.content, msg.guildId)
+    if (mod_result) msg.author.send({ embeds: [mod_result] })
     guildMap.getValue(msg.guildId).getValue(msg.channelId).addMsg(msg.author.id, msg.id, msg.content)
-    
 })
 
 client.on('messageUpdate', async (msg) => {

@@ -5,8 +5,11 @@ const stopWord = require('stopword')
 const SuffixTree = require('./util/suffix_tree')
 const math = require('mathjs')
 const cfg = require('../config.json')
+const ProfanityFilter = require('bad-words')
+const { EmbedBuilder } = require('discord.js')
 
 const get_ascii_index = (c) => { return c.charCodeAt(0) }
+const get_hex_value = (d) => { return '0x' + d.toString(16).padStart(6, '0') }
 
 function get_bwt(msg){
     const bwt_msg = msg + '$'
@@ -45,7 +48,8 @@ async function restricted_keyword_match(msg, gid){
     const rank_arr = get_rank_arr(bwt)
     const occ_arr = get_occurrence_arr(bwt)
     const result = new Map()
-    await connection.query(`SELECT keyword FROM guild_restricted_keyword WHERE guild_id = '${gid}'`).then(([keywords]) => {
+    try{
+        const [keywords] = await connection.query(`SELECT keyword FROM guild_restricted_keyword WHERE guild_id = '${gid}'`)
         keywords.forEach(keyword => {
             const pattern = keyword.keyword
             let sp = 1
@@ -61,7 +65,10 @@ async function restricted_keyword_match(msg, gid){
             if (position.length > 0) result.set(pattern, position)
         })
         return result
-    })
+    } catch(e){
+        console.error(e)
+        throw e
+    }
 }
 
 async function update_user_sentiment(conversation){
@@ -97,5 +104,45 @@ function sentiment_analysis(msg){
     return sentimentAnalyzer.getSentiment(tokenized)
 }
 
-module.exports = update_user_sentiment
+async function mod(id, msg, gid){
+    var profanityFilter = new ProfanityFilter({ placeHolder: '*'});
+    const contains_profanity = profanityFilter.isProfane(msg)
+    const sentiment_score = sentiment_analysis(msg) 
+    const text_filter = await restricted_keyword_match(msg, gid)
+    if (contains_profanity && sentiment_score < cfg.sentimentThreshold || text_filter.size > 0){
+        const format_instruction = Array.from(text_filter.entries(), ([pat, pos]) => {
+            return pos.map(p => [p, p+pat.length-1])
+        }).flat()
+        format_instruction.sort((a, b) => b[0]-a[0])
+        const ansi_start = `[0;${cfg.ansi_bg}m`
+        const ansi_end = `[0m`
+        format_instruction.forEach(([start, end]) => {
+            const before = msg.substring(0, start)
+            const substring = msg.substring(start, end+1)
+            const after = msg.substring(end+1, msg.length)
+            const formatted_substring = ansi_start + substring + ansi_end
+            msg = before + formatted_substring + after
+        })
+        msg = "```ansi\n" + msg + "\n```"
+        return mod_embed_msg_builder(id, gid, profanityFilter.clean(msg), sentiment_score, cfg.timeoutDuration * (Math.abs(Number(contains_profanity)*(Math.round(sentiment_score))) + text_filter.size))
+    }
+    return null;
+}
+
+function mod_embed_msg_builder(id, gid, description, sentiment_score, timeout_duration){
+    return new EmbedBuilder()
+        .setColor(Number(get_hex_value(cfg.embed_color)))
+        .setTitle("Moderation Result for msg `" + id + "` in guild `" + gid + "`")
+        .setDescription(description)
+        .addFields(
+            { name: 'Sentiment Score', value: `${sentiment_score}`, inline: true },
+            { name: 'Timeout Duration', value: `${timeout_duration / 1000} seconds`, inline: true },
+        )
+        .setFooter({ text:"Highlighted substring represents restricted keyword and '*' represents profanity." })
+}
+
+module.exports = { 
+    update_user_sentiment,
+    mod 
+}
 
