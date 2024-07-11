@@ -131,7 +131,7 @@ async function mod(id, msg, gid){
 
 function mod_embed_msg_builder(id, gid, description, sentiment_score, timeout_duration){
     return new EmbedBuilder()
-        .setColor(Number(get_hex_value(cfg.embed_color)))
+        .setColor(Number(get_hex_value(cfg.mod_embed_color)))
         .setTitle("Moderation Result for msg `" + id + "` in guild `" + gid + "`")
         .setDescription(description)
         .addFields(

@@ -4,7 +4,8 @@
     "maxQueueSize": 5,
     "ascii_ubound": 127,
     "ascii_lbound": 0,
-    "embed_color": 16734003,
+    "mod_embed_color": 16734003,
+    "ldb_embed_color": 39423,
     "ansi_bg": 41
 }
 
