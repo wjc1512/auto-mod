@@ -11,7 +11,9 @@ DROP TABLE IF EXISTS guild_restricted_keyword;
 CREATE TABLE guild (
     guild_id VARCHAR(100),
     guild_name VARCHAR(200),
-    join_date DATE
+    ldb_count INTEGER(3) DEFAULT 10,
+    join_date DATE,
+    CHECK(ldb_count >= 0 AND ldb_count <= 50)
 );
 
 ALTER TABLE guild ADD CONSTRAINT guild_pk PRIMARY KEY ( guild_id );

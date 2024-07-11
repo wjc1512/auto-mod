@@ -2,10 +2,14 @@ require('dotenv').config()
 const { Events, EmbedBuilder } = require('discord.js')
 const GuildMap = require('./conversation_map.js')
 const client = require('./client.js')
+const cfg = require('../config.json')
 const { mod } = require('./moderation')
+var cron = require("node-cron")
 
 let connection
 const guildMap = GuildMap.getInstance()
+
+const get_hex_value = (d) => { return '0x' + d.toString(16).padStart(6, '0') }
 
 client.on('ready', async () => {
     connection = await require('./database/db')
@@ -143,5 +147,46 @@ async function checkForModeration(msg){
     const [ignored_channels] = await connection.query(`SELECT * FROM guild_ignored_channel WHERE guild_id = '${msg.guild.id}'`)
     return msg.author.bot || authorized_roles.some(role => msg_author_roles_id.includes(role.role_id)) || ignored_channels.some(channel => channel.channel_id == msg.channelid)
 }
+
+const guildLeaderboardUpdate = async () => {
+    const CHANNEL_NAME = "sentiment-leaderboard"
+    await connection.query('SELECT guild_id FROM guild').then(([guilds]) => {
+        guilds.forEach(async guild => {
+            const guild_ref = client.guilds.cache.get(guild.guild_id)
+            let ldb_upd_channel = guild_ref.channels.cache.find(channel => channel.name == CHANNEL_NAME)
+            if (!ldb_upd_channel){
+                ldb_upd_channel = await guild_ref.channels.create({
+                    name: CHANNEL_NAME,
+                    type: 0
+                })
+            }
+            const ldb_count = (await connection.query(`SELECT ldb_count FROM guild WHERE guild_id = '${guild.guild_id}'`))[0][0].ldb_count
+            const user_sorted = (await connection.query(`SELECT user_id, st_score FROM user WHERE guild_id = '${guild.guild_id}' ORDER BY st_score DESC`))[0]
+            ldb_upd_channel.send({ embeds: [await leaderboard_embed_builder(ldb_count, user_sorted, guild_ref)] })
+        })
+    })
+}
+
+async function leaderboard_embed_builder(count, user, guild){
+    await guild.members.fetch();
+    const rank_val = Array.from({ length: user.length }, (_, index) => index + 1 + '.').join('\n')
+    const user_val = user.slice(0, count).map(usr => guild.members.cache.get(usr.user_id).user).join('\n')
+    const st_score_val = user.slice(0, count).map(usr => usr.st_score).join('\n')
+
+    return new EmbedBuilder()
+        .setTitle(`Sentiment Standouts: Top ${count}`)
+        .setColor(Number(get_hex_value(cfg.ldb_embed_color)))
+        .addFields(
+            { name: 'Rank', value: rank_val, inline: true },
+            { name: 'User', value: user_val, inline: true },
+            { name: 'Sentiment Score', value: st_score_val, inline: true }
+        )
+        .setTimestamp()
+}   
+
+cron.schedule('0 0 1 * *', guildLeaderboardUpdate, {
+    scheduled: true,
+    timezone: "Asia/Kuala_Lumpur"
+})
 
 client.login(process.env.TOKEN);

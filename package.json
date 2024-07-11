@@ -18,6 +18,7 @@
     "mathjs": "^13.0.1",
     "mysql2": "^3.6.5",
     "natural": "^7.0.6",
+    "node-cron": "^3.0.3",
     "spelling-corrector": "^3.0.0",
     "stopword": "^3.0.1"
   }
